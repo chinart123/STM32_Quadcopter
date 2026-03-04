@@ -1,0 +1,33 @@
+# ==========================================
+# 1. BỎ QUA RÁC BIÊN DỊCH CỦA KEILC (MDK-ARM)
+# ==========================================
+STM32_BareMetal_Test/Objects/
+STM32_BareMetal_Test/Listings/
+STM32_BareMetal_Test/DebugConfig/
+*.o
+*.d
+*.crf
+*.map
+*.axf
+*.htm
+*.lnp
+*.sct
+*.dep
+*.build_log.htm
+*.iex
+
+# ==========================================
+# 2. BỎ QUA FILE CẤU HÌNH CÁ NHÂN & DEBUG
+# ==========================================
+*.uvguix.*
+*.uvoptx
+*.scvd
+JLinkLog.txt
+# Bỏ qua các file backup của thư viện RTE do KeilC sinh ra
+*.base@*
+
+# ==========================================
+# 3. BỎ QUA CẤU HÌNH CỦA EDITOR KHÁC
+# ==========================================
+.vscode/
+.codemap/
