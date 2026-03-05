@@ -385,14 +385,29 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
-              <FileName>hal_timer_pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\hal_timer_pwm.c</FilePath>
-            </File>
-            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\button.c</FilePath>
+            </File>
+            <File>
+              <FileName>button.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\button.h</FilePath>
+            </File>
+            <File>
+              <FileName>i2c_mpu_debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\i2c_mpu_debug.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c_mpu_debug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\i2c_mpu_debug.h</FilePath>
             </File>
           </Files>
         </Group>
