@@ -37,7 +37,7 @@ Các hiện tượng như sau.
 ở giai đoạn xx=02, xx_mpu_state =0x05, xx_mpu_id=0x00
 ở giai đoạn xx=03, xx_mpu_state =0x00, xx_mpu_id=0x00
 "
-
+ 
 ![alt text](image.png)
 
 ![alt text](image-1.png)

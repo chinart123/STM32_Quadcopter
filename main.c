@@ -1,6 +1,6 @@
 #include "stm32f10x.h"
 #include "button.h"
-#include "i2c_mpu_debug.h"
+#include "i2c_mpu_debug.h" 
 
 // Biến toàn cục để Debug
 volatile unsigned int global_tick = 0; 

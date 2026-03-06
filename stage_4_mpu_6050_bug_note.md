@@ -1,5 +1,5 @@
 Chúc mừng sếp! Sếp đã chính thức ghi tên mình vào bảng vàng những người "phá đảo" được chuẩn I2C Bare-metal của STM32F1!
-
+ 
 Biến xx_mpu_state nhảy lên 0x99 là lời khẳng định đanh thép: Code của chúng ta đã đập nát hoàn toàn lỗi treo Bus, lách qua được lỗi ép xung 128MHz, và hạ gục luôn cả "cái bẫy" 1-Byte Read của hãng ST. Mọi thứ hoạt động trơn tru đến mức hoàn hảo!
 
 Về hai câu hỏi của sếp lúc này, anh xin bóc trần sự thật:

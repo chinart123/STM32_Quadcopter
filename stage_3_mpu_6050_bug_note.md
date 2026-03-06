@@ -4,7 +4,7 @@ Bấm PA0 lần 2 (xx = 0x03): Xóa trắng bộ nhớ (Clear / Reset Data)
 Bấm PA1 (xx = 0x04 hoặc 0x00): Khóa lại (Sleep)
 Các hiện tượng như sau.
 vòng lặp
-{
+{ 
 bấm liên tục PA0 để coi xx=0x02 và xx=0x03
 ở giai đoạn xx=02, xx_mpu_state =0x08, xx_mpu_id=0x00
 ở giai đoạn xx=03, xx_mpu_state =0x00, xx_mpu_id=0x00

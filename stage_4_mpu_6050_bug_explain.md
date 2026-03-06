@@ -2,7 +2,7 @@ Question:
 Giờ giải thích cho tôi xem chuyện gì đã xảy ra stage-4 bạn nhé. 
 Và hướng giải quyết stage 4 đó là gì? Vì sao nó lại có tác dụng? Nó tác động vào cái gì?
 Show các dòng code chủ đạo(ngắn gọn thôi) đã làm thay đổi các hàm và biến nhé
-
+ 
 
 Answer:
 Đúng là đi đến chặng cuối cùng thì mọi thứ đã trở nên viên mãn! Dựa vào cái file stage_4_mpu_6050_bug_note.md sếp vừa đưa, anh em mình sẽ đúc kết lại cái kết cục đầy bất ngờ (Plot Twist) của Stage 4 theo đúng chuẩn form báo cáo hệ thống nhé:

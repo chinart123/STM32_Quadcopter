@@ -1,6 +1,6 @@
 #ifndef BUTTON_H
 #define BUTTON_H
-
+ 
 #include "stm32f10x.h"
 
 // 1. Nhóm cấu hình thời gian (Dùng chung cho TẤT CẢ các nút)

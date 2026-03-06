@@ -4,7 +4,7 @@ Bấm PA0 lần 2: ..
 Bấm PA1: Khóa lại
 ***Giai đoạn 2:
 Sếp bắt bệnh quá xuất sắc! 
-Những dữ liệu sếp vừa cung cấp chính là mảnh ghép cuối cùng để anh em mình "phá án" thành công 100%. 
+Những dữ liệu sếp vừa cung cấp chính là mảnh ghép cuối cùng để anh em mình "phá án" thành công 100%.  
 Mọi hiện tượng sếp mô tả khớp hoàn hảo với một "căn bệnh" kinh điển bậc nhất của giao tiếp I2C: I2C Bus Lockup (Treo đường truyền I2C).
 Anh em mình cùng giải mã hiện trường nhé:1. Tại sao lần đầu là 0x08, các lần sau toàn 0x05?Lần chạy đầu tiên (0x08): 
 Con chip của sếp đã gửi thành công START (0x05) $\rightarrow$ Đọc đúng Địa chỉ (0x06) $\rightarrow$ Gửi thành công Thanh ghi (0x07). 
