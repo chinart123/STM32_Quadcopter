@@ -1,61 +1,55 @@
 #include "i2c_mpu_debug.h"
 
-// Hàm chọc ngoáy thủ công để gỡ kẹt Bus I2C (Bus Recovery)
+// Hàm chọc ngoáy thủ công để gỡ kẹt Bus I2C
 void I2C_Bus_Recovery(void) {
     RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
-    
-    // Cấu hình PB6 (SCL) và PB7 (SDA) là Output Open-Drain (Không dùng Alternate Function)
     GPIOB->CRL &= ~(0xFF << 24);
     GPIOB->CRL |= (0x77 << 24); 
-    
-    GPIOB->ODR |= (1 << 7); // Kéo SDA lên High
-    
-    // Tạo 9 xung Clock thủ công để ép Slave nhả Bus
+    GPIOB->ODR |= (1 << 7); 
     for(int i = 0; i < 9; i++) {
-        GPIOB->ODR |= (1 << 6); // SCL High
+        GPIOB->ODR |= (1 << 6); 
         for(volatile int j = 0; j < 2000; j++); 
-        GPIOB->ODR &= ~(1 << 6); // SCL Low
+        GPIOB->ODR &= ~(1 << 6); 
         for(volatile int j = 0; j < 2000; j++);
     }
-    
-    // Tạo giả lập tín hiệu STOP (SCL lên High, sau đó SDA lên High)
-    GPIOB->ODR &= ~(1 << 7); // SDA Low
+    GPIOB->ODR &= ~(1 << 7); 
     for(volatile int j = 0; j < 2000; j++);
-    GPIOB->ODR |= (1 << 6);  // SCL High
+    GPIOB->ODR |= (1 << 6);  
     for(volatile int j = 0; j < 2000; j++);
-    GPIOB->ODR |= (1 << 7);  // SDA High
+    GPIOB->ODR |= (1 << 7);  
     for(volatile int j = 0; j < 2000; j++);
 }
 
 void I2C1_Init(void) {
-    // 1. Tự động thông tắc Bus trước khi khởi tạo
-    I2C_Bus_Recovery();
+    I2C_Bus_Recovery(); // Quét sạch rác trên dây SDA
     
-    // 2. Cấp xung nhịp
     RCC->APB2ENR |= RCC_APB2ENR_IOPBEN | RCC_APB2ENR_AFIOEN;
     RCC->APB1ENR |= RCC_APB1ENR_I2C1EN; 
-    
-    // 3. Trả PB6, PB7 về đúng chế độ Alternate Function Open-Drain
     GPIOB->CRL &= ~(0xFF << 24); 
     GPIOB->CRL |= (0xFF << 24);  
     
-    // 4. Reset bộ I2C1
     RCC->APB1RSTR |= RCC_APB1RSTR_I2C1RST; 
     RCC->APB1RSTR &= ~RCC_APB1RSTR_I2C1RST;
     
-    // 5. Tính toán Tự động theo Xung nhịp hệ thống (Chống lỗi ép xung)
-    uint32_t pclk1 = SystemCoreClock / 2; // Bus APB1 thường bằng 1/2 SysClock
-    uint32_t freq_mhz = pclk1 / 1000000;
+    // --- KHẮC PHỤC LỖI TRÀN BIT DO ÉP XUNG 128MHz ---
+    uint32_t apb1_freq = SystemCoreClock / 2; 
+    uint32_t freq_mhz = apb1_freq / 1000000;
+    
+    // Giới hạn an toàn: Thanh ghi CR2 tối đa là 50MHz (0x32)
+    // Nếu freq_mhz >= 64 nó sẽ tràn về 0 gây liệt I2C
+    if (freq_mhz > 50) freq_mhz = 50; 
+    if (freq_mhz == 0) freq_mhz = 8;  
     
     I2C1->CR2 = freq_mhz; 
-    I2C1->CCR = pclk1 / (100000 * 2); // Chuẩn 100kHz
+    I2C1->CCR = (apb1_freq / 100000) / 2; 
     I2C1->TRISE = freq_mhz + 1;
     
     I2C1->CR1 |= I2C_CR1_PE; 
+    I2C1->CR1 |= I2C_CR1_ACK; // Ép bật sẵn cờ Trả lời (ACK)
 }
 
 uint8_t MPU_WriteReg(uint8_t reg, uint8_t data) {
-    uint32_t t = 100000; // Tăng kịch kim Timeout
+    uint32_t t = 100000; 
     I2C1->CR1 |= I2C_CR1_START;
     while(!(I2C1->SR1 & I2C_SR1_SB)) { if(--t==0) return 0x05; }
     
@@ -77,6 +71,9 @@ void MPU_WakeUp(void) { MPU_WriteReg(0x6B, 0x00); }
 void MPU_Sleep(void)  { MPU_WriteReg(0x6B, 0x40); }
 
 void MPU_Read_WhoAmI(volatile uint8_t *state, volatile uint8_t *id) {
+    // RESET LẠI I2C TRƯỚC MỖI LẦN ĐỌC: Đảm bảo không bao giờ bị dính "0x05" ở các lần F5 sau
+    I2C1_Init(); 
+    
     uint32_t t = 100000;
     
     I2C1->CR1 |= I2C_CR1_START;
@@ -103,5 +100,5 @@ void MPU_Read_WhoAmI(volatile uint8_t *state, volatile uint8_t *id) {
     t = 100000; while(!(I2C1->SR1 & I2C_SR1_RXNE)) { if(--t==0){ *state = 0x08; return;} }
     
     *id = I2C1->DR; 
-    *state = 0x99; 
+    *state = 0x99; // Báo cáo PASS
 }
