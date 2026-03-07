@@ -65,18 +65,58 @@ void MPU_Fusion_Read_Burst(void) {
 }
 
 // =================================================================
+// THÊM MỚI Ở STAGE 6: HÀM TÌM VÀ TRIỆT TIÊU SAI SỐ (CALIBRATION)
+// Lưu ý: Mạch phải ĐƯỢC ĐẶT NẰM IM PHẲNG trên bàn trước khi gọi hàm này
+// =================================================================
+void MPU_Fusion_Calibrate(void) {
+    int32_t sum_ax = 0, sum_ay = 0, sum_az = 0;
+    int32_t sum_gx = 0, sum_gy = 0, sum_gz = 0;
+    uint16_t num_samples = 1000; // Lấy 1000 mẫu để tính trung bình
+    uint8_t buffer[14]; // SỬA LỖI STAGE 6: Dùng buffer ẩn để không làm nhiễu cửa sổ Watch
+    for (uint16_t i = 0; i < num_samples; i++) {
+        // Hút 14 bytes thẳng vào mảng ẩn, KHÔNG qua Drone_IMU
+        MPU_Read_Multi(0x3B, buffer, 14);
+
+        
+        sum_ax += (int16_t)((buffer[0] << 8) | buffer[1]);
+        sum_ay += (int16_t)((buffer[2] << 8) | buffer[3]);
+        sum_az += (int16_t)((buffer[4] << 8) | buffer[5]);
+        sum_gx += (int16_t)((buffer[8] << 8) | buffer[9]);
+        sum_gy += (int16_t)((buffer[10] << 8) | buffer[11]);
+        sum_gz += (int16_t)((buffer[12] << 8) | buffer[13]);
+        
+        // Delay 1 chút (~1ms) để cảm biến kịp nặn ra data mới
+        for(volatile int j=0; j<7200; j++); 
+    }
+
+    // Tính trung bình và cất vào kho Offset
+    Drone_IMU.Accel_X_Offset = sum_ax / num_samples;
+    Drone_IMU.Accel_Y_Offset = sum_ay / num_samples;
+    // ĐẶC BIỆT: Trục Z chịu lực 1g (4096 LSB), nên sai số = Trung bình - 4096
+    Drone_IMU.Accel_Z_Offset = (sum_az / num_samples) - 4096; 
+    
+    Drone_IMU.Gyro_X_Offset = sum_gx / num_samples;
+    Drone_IMU.Gyro_Y_Offset = sum_gy / num_samples;
+    Drone_IMU.Gyro_Z_Offset = sum_gz / num_samples;
+}
+
+// =================================================================
 // 2. CỐI XAY TOÁN HỌC (CHUYỂN ĐỔI SỐ LIỆU VÀ TÍNH GÓC)
 // =================================================================
 void MPU_Fusion_Compute(void) {
     // Bước 1: Scale Dữ liệu (Chia cho hằng số phần cứng)
     // Accel chia 4096 (Cấu hình ±8g). Gyro chia 65.5 (Cấu hình ±500 dps)
-    Drone_IMU.Ax = (float)Drone_IMU.Accel_X_RAW / 4096.0f;
-    Drone_IMU.Ay = (float)Drone_IMU.Accel_Y_RAW / 4096.0f;
-    Drone_IMU.Az = (float)Drone_IMU.Accel_Z_RAW / 4096.0f;
+    // --- SỬA LOGIC STAGE 6: Lấy Data Thô TRỪ ĐI Offset trước khi chia ---
+    // Code cũ: Drone_IMU.Ax = (float)Drone_IMU.Accel_X_RAW / 4096.0f;
+    Drone_IMU.Ax = (float)(Drone_IMU.Accel_X_RAW - Drone_IMU.Accel_X_Offset) / 4096.0f;
+    Drone_IMU.Ay = (float)(Drone_IMU.Accel_Y_RAW - Drone_IMU.Accel_Y_Offset) / 4096.0f;
+    Drone_IMU.Az = (float)(Drone_IMU.Accel_Z_RAW - Drone_IMU.Accel_Z_Offset) / 4096.0f;
 
-    Drone_IMU.Gx = (float)Drone_IMU.Gyro_X_RAW / 65.5f;
-    Drone_IMU.Gy = (float)Drone_IMU.Gyro_Y_RAW / 65.5f;
-    Drone_IMU.Gz = (float)Drone_IMU.Gyro_Z_RAW / 65.5f;
+    // Code cũ: Drone_IMU.Gx = (float)Drone_IMU.Gyro_X_RAW / 65.5f;
+    Drone_IMU.Gx = (float)(Drone_IMU.Gyro_X_RAW - Drone_IMU.Gyro_X_Offset) / 65.5f;
+    Drone_IMU.Gy = (float)(Drone_IMU.Gyro_Y_RAW - Drone_IMU.Gyro_Y_Offset) / 65.5f;
+    Drone_IMU.Gz = (float)(Drone_IMU.Gyro_Z_RAW - Drone_IMU.Gyro_Z_Offset) / 65.5f;
+    // ---------------------------------------------------------------------
 
     // Bước 2: Dùng Toán học giải tích (Trigonometry) tính góc Roll & Pitch từ Gia tốc
     // Hệ số 57.2957795f dùng để đổi từ đơn vị Radian sang Độ (180/PI)

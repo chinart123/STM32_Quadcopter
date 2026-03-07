@@ -26,6 +26,17 @@ typedef struct {
     int16_t Gyro_X_RAW;
     int16_t Gyro_Y_RAW;
     int16_t Gyro_Z_RAW;
+    // =================================================================
+    // --- THÊM MỚI Ở STAGE 6: Nhóm biến Offset (Sai số phần cứng) ---
+    // =================================================================
+    int16_t Accel_X_Offset;
+    int16_t Accel_Y_Offset;
+    int16_t Accel_Z_Offset;
+    
+    int16_t Gyro_X_Offset;
+    int16_t Gyro_Y_Offset;
+    int16_t Gyro_Z_Offset;
+    // -----------------------------------------------------------------
 
     // 2. Nhóm Dữ liệu Vật lý (Scaled Data) - Đã chia cho hằng số độ nhạy
     float Ax, Ay, Az;      // Gia tốc thực tế (đơn vị: g)
@@ -49,4 +60,6 @@ void MPU_Fusion_Init(void);       // Ghi cấu hình (DLPF, Range) vào MPU6500
 void MPU_Fusion_Read_Burst(void); // Hút 14 bytes thô bằng 1 lệnh I2C
 void MPU_Fusion_Compute(void);    // Chạy cối xay toán học (Complementary Filter)
 
+// --- THÊM MỚI Ở STAGE 6: Hàm tự động hiệu chuẩn lúc khởi động ---
+void MPU_Fusion_Calibrate(void);
 #endif

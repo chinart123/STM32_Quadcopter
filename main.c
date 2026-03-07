@@ -2,7 +2,7 @@
 #include "button.h"
 #include "i2c_mpu_debug.h" 
 #include "xx_mpu_data_fusion.h" // Nhúng não bộ Toán học vào đây
-
+#include <string.h>
 // ==========================================================
 // BIẾN TOÀN CỤC (GLOBAL VARIABLES)
 // ==========================================================
@@ -49,16 +49,22 @@ int main(void) {
                 MPU_WakeUp();
                 MPU_Fusion_Init(); // Nạp cấu hình bay (±8g, ±500dps, DLPF)
                 MPU_Read_WhoAmI(&xx_mpu_state, &xx_mpu_id); // GỌI TÀI XẾ CẬP NHẬT TRẠNG THÁI I2C TẠI ĐÂY
+                // ==========================================================
+                // --- THÊM MỚI Ở STAGE 6: Đọc 1000 mẫu để khử sai số ---
+                // Sếp chú ý: Lúc bấm nút này mạch phải đang nằm trên bàn!
+                // ==========================================================
+                MPU_Fusion_Calibrate();
                 xx = 0x01;         // CHA BẬT: Hệ thống sẵn sàng (Standby)
             } 
             // Nếu hệ thống đang bật (0x01, 0x02, 0x03) -> TẮT
             else {
                 MPU_Sleep();       // Ép MPU ngủ đông
-                
+                // Dọn sạch sành sanh không chừa một mảnh rác nào trong Struct
+                memset((void*)&Drone_IMU, 0, sizeof(MPU_Motion_t));
                 // Đóng băng hiện trường: Chỉ xóa góc bay, giữ nguyên Data thô
-                Drone_IMU.Roll = 0.0f; 
-                Drone_IMU.Pitch = 0.0f; 
-                Drone_IMU.Yaw = 0.0f;
+//                Drone_IMU.Roll = 0.0f; 
+//                Drone_IMU.Pitch = 0.0f; 
+//                Drone_IMU.Yaw = 0.0f;
                 
                 xx = 0x04;         // CHA TẮT: Hệ thống đi ngủ
             }
