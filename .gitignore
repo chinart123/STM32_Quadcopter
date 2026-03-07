@@ -25,7 +25,10 @@ STM32_BareMetal_Test/DebugConfig/
 JLinkLog.txt
 # Bỏ qua các file backup của thư viện RTE do KeilC sinh ra
 *.base@*
-
+# Bỏ qua thư mục "RTE\_Target_1\RTE_Components.h"
+# Run time environment
+# Khi nào đổi chip(e.g: STM32F4 thì mới cần giữ lại)
+RTE/
 # ==========================================
 # 3. BỎ QUA CẤU HÌNH CỦA EDITOR KHÁC
 # ==========================================

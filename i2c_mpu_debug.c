@@ -110,3 +110,42 @@ void MPU_Read_WhoAmI(volatile uint8_t *state, volatile uint8_t *id) {
     *id = I2C1->DR; 
     *state = 0x99; 
 }
+
+// Hàm hút dữ liệu liên tục (Burst Read) không cần ngắt (Polling)
+void MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size) {
+    // 1. Chờ I2C rảnh, tạo START và gửi địa chỉ MPU (Chế độ Ghi)
+    while(I2C1->SR2 & I2C_SR2_BUSY);
+    I2C1->CR1 |= I2C_CR1_START;
+    while(!(I2C1->SR1 & I2C_SR1_SB));
+    
+    I2C1->DR = 0x68 << 1; // Địa chỉ MPU-6500 (Ghi)
+    while(!(I2C1->SR1 & I2C_SR1_ADDR));
+    (void)I2C1->SR2; // Xóa cờ ADDR
+    
+    // 2. Gán thanh ghi bắt đầu muốn đọc (ví dụ: 0x3B - Accel_X_H)
+    I2C1->DR = reg;
+    while(!(I2C1->SR1 & I2C_SR1_TXE));
+    
+    // 3. Khởi động lại (Repeated START) chuyển sang chế độ Đọc
+    I2C1->CR1 |= I2C_CR1_START;
+    while(!(I2C1->SR1 & I2C_SR1_SB));
+    
+    I2C1->DR = (0x68 << 1) | 1; // Địa chỉ MPU-6500 (Đọc)
+    while(!(I2C1->SR1 & I2C_SR1_ADDR));
+    (void)I2C1->SR2; // Xóa cờ ADDR
+    
+    // Bật cờ ACK để cho phép nhận nhiều byte liên tiếp
+    I2C1->CR1 |= I2C_CR1_ACK;
+    
+    // 4. Vòng lặp hút cạn dữ liệu
+    for(uint8_t i = 0; i < size; i++) {
+        if(i == size - 1) {
+            // Đến byte cuối cùng: Phải tắt ACK và ném lệnh STOP trước khi đọc
+            I2C1->CR1 &= ~I2C_CR1_ACK;
+            I2C1->CR1 |= I2C_CR1_STOP;
+        }
+        // Đợi byte chui vào thanh ghi DR rồi móc nó ra
+        while(!(I2C1->SR1 & I2C_SR1_RXNE));
+        data[i] = I2C1->DR;
+    }
+}

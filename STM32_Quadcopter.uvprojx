@@ -409,6 +409,16 @@
               <FileType>5</FileType>
               <FilePath>.\i2c_mpu_debug.h</FilePath>
             </File>
+            <File>
+              <FileName>xx_mpu_data_fusion.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\xx_mpu_data_fusion.h</FilePath>
+            </File>
+            <File>
+              <FileName>xx_mpu_data_fusion.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\xx_mpu_data_fusion.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
