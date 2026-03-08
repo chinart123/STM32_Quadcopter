@@ -11,4 +11,9 @@ void HAL_TIM3_PWM_Init(void);
 // channel: 1, 2, 3, 4 tương ứng với 4 góc của Quadcopter
 void HAL_TIM3_PWM_SetDuty(uint8_t channel, uint16_t duty);
 
+// =================================================================
+// --- THÊM MỚI Ở STAGE 7: HÀM ĐO THỜI GIAN MICRO-GIÂY (DÙNG TIM4) ---
+// =================================================================
+void HAL_TIM4_Micros_Init(void);
+uint16_t micros(void);
 #endif

@@ -111,41 +111,68 @@ void MPU_Read_WhoAmI(volatile uint8_t *state, volatile uint8_t *id) {
     *state = 0x99; 
 }
 
-// Hàm hút dữ liệu liên tục (Burst Read) không cần ngắt (Polling)
-void MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size) {
-    // 1. Chờ I2C rảnh, tạo START và gửi địa chỉ MPU (Chế độ Ghi)
-    while(I2C1->SR2 & I2C_SR2_BUSY);
+// [FIX LỖI]: Đổi void thành uint8_t để biết đọc Thành công hay Thất bại
+// =================================================================
+// STAGE 7: HÀM ĐỌC NHIỀU BYTE - BẢN "CỖ XE TĂNG" (KHÔNG MACRO)
+// =================================================================
+uint8_t MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size) {
+    uint32_t timeout;
+
+    // [FIX LỖI]: Tăng Timeout lên 500.000 (~20ms) để không chém nhầm do SysTick ngắt
+    timeout = 500000;
+    while(I2C1->SR2 & I2C_SR2_BUSY) { if(--timeout == 0) goto i2c_error; }
+
     I2C1->CR1 |= I2C_CR1_START;
-    while(!(I2C1->SR1 & I2C_SR1_SB));
+    timeout = 500000;
+    while(!(I2C1->SR1 & I2C_SR1_SB)) { if(--timeout == 0) goto i2c_error; }
     
-    I2C1->DR = 0x68 << 1; // Địa chỉ MPU-6500 (Ghi)
-    while(!(I2C1->SR1 & I2C_SR1_ADDR));
-    (void)I2C1->SR2; // Xóa cờ ADDR
+    I2C1->DR = 0x68 << 1; 
+    timeout = 500000;
+    while(!(I2C1->SR1 & I2C_SR1_ADDR)) { if(--timeout == 0) goto i2c_error; }
+    (void)I2C1->SR2; 
     
-    // 2. Gán thanh ghi bắt đầu muốn đọc (ví dụ: 0x3B - Accel_X_H)
     I2C1->DR = reg;
-    while(!(I2C1->SR1 & I2C_SR1_TXE));
+    timeout = 500000;
+    while(!(I2C1->SR1 & I2C_SR1_TXE)) { if(--timeout == 0) goto i2c_error; }
     
-    // 3. Khởi động lại (Repeated START) chuyển sang chế độ Đọc
     I2C1->CR1 |= I2C_CR1_START;
-    while(!(I2C1->SR1 & I2C_SR1_SB));
+    timeout = 500000;
+    while(!(I2C1->SR1 & I2C_SR1_SB)) { if(--timeout == 0) goto i2c_error; }
     
-    I2C1->DR = (0x68 << 1) | 1; // Địa chỉ MPU-6500 (Đọc)
-    while(!(I2C1->SR1 & I2C_SR1_ADDR));
-    (void)I2C1->SR2; // Xóa cờ ADDR
+    I2C1->DR = (0x68 << 1) | 1; 
+    timeout = 500000;
+    while(!(I2C1->SR1 & I2C_SR1_ADDR)) { if(--timeout == 0) goto i2c_error; }
+    (void)I2C1->SR2; 
     
-    // Bật cờ ACK để cho phép nhận nhiều byte liên tiếp
     I2C1->CR1 |= I2C_CR1_ACK;
-    
-    // 4. Vòng lặp hút cạn dữ liệu
     for(uint8_t i = 0; i < size; i++) {
-        if(i == size - 1) {
-            // Đến byte cuối cùng: Phải tắt ACK và ném lệnh STOP trước khi đọc
-            I2C1->CR1 &= ~I2C_CR1_ACK;
-            I2C1->CR1 |= I2C_CR1_STOP;
-        }
-        // Đợi byte chui vào thanh ghi DR rồi móc nó ra
-        while(!(I2C1->SR1 & I2C_SR1_RXNE));
+        if(i == size - 1) { I2C1->CR1 &= ~I2C_CR1_ACK; I2C1->CR1 |= I2C_CR1_STOP; }
+        timeout = 500000;
+        while(!(I2C1->SR1 & I2C_SR1_RXNE)) { if(--timeout == 0) goto i2c_error; }
         data[i] = I2C1->DR;
     }
+    
+    xx_mpu_state = 0x99; 
+    return 1; // [FIX LỖI]: Trả về 1 báo cáo HÚT THÀNH CÔNG
+
+i2c_error:
+    xx_mpu_state = 0x08; 
+    I2C_Bus_Recovery();  
+    I2C1_Init();         
+    return 0; // [FIX LỖI]: Trả về 0 báo cáo ĐỨT DÂY, ngăn chặn tính toán rác
+}
+
+// =================================================================
+// THÊM MỚI Ở STAGE 7: KHỞI TẠO BỘ ĐẾM MICRO-GIÂY (TIM4)
+// =================================================================
+void HAL_TIM4_Micros_Init(void) {
+    RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+    TIM4->PSC = 71; 
+    TIM4->ARR = 0xFFFF;
+    TIM4->EGR |= TIM_EGR_UG;
+    TIM4->CR1 |= TIM_CR1_CEN;
+}
+
+uint16_t micros(void) {
+    return TIM4->CNT;
 }

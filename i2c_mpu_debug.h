@@ -37,6 +37,7 @@ void MPU_Sleep(void);
 void MPU_Read_WhoAmI(volatile uint8_t *state, volatile uint8_t *id);
 
 // Các hàm quét dữ liệu
-void MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size);
+// [FIX LỖI]: Đổi void thành uint8_t để biết đọc Thành công hay Thất bại
+uint8_t MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size);
 uint8_t MPU_WriteReg(uint8_t reg, uint8_t data);
 #endif

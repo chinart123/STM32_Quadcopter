@@ -1,6 +1,7 @@
 #include "xx_mpu_data_fusion.h"
 #include "i2c_mpu_debug.h" // Gọi tài xế I2C vào làm việc
 #include <math.h> // Thư viện toán học cực mạnh để tính Lượng giác
+#include "hal_timer_pwm.h" // Dùng cho stage 7
 // Khởi tạo biến toàn cục đã khai báo ở file .h
 MPU_Motion_t Drone_IMU;
 
@@ -9,7 +10,7 @@ MPU_Motion_t Drone_IMU;
 extern uint8_t MPU_WriteReg(uint8_t reg, uint8_t data);
 
 // Cần gọi tài xế I2C từ file kia sang
-extern void MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size);
+extern uint8_t MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size);
 
 // =================================================================
 // HÀM CẤU HÌNH MPU-6500 CHUYÊN DỤNG CHO QUADCOPTER
@@ -46,11 +47,11 @@ void MPU_Fusion_Init(void) {
 // =================================================================
 // 1. HÀM HÚT 14 BYTES TỪ MPU-6500 (Thanh ghi 0x3B đến 0x48)
 // =================================================================
-void MPU_Fusion_Read_Burst(void) {
+uint8_t MPU_Fusion_Read_Burst(void) {
     uint8_t buffer[14];
     
-    // Gọi tài xế I2C chạy ra địa chỉ 0x3B (Gia tốc X), hút 14 byte mang về
-    MPU_Read_Multi(0x3B, buffer, 14);
+    // [FIX LỖI]: Nếu Tài xế I2C báo lỗi (0), hất văng ra luôn, tuyệt đối không gán RÁC vào biến RAW
+    if (MPU_Read_Multi(0x3B, buffer, 14) == 0) return 0;
     
     // Ép kiểu (Ghép 2 byte 8-bit thành 1 số nguyên có dấu 16-bit)
     Drone_IMU.Accel_X_RAW = (int16_t)((buffer[0] << 8) | buffer[1]);
@@ -62,20 +63,21 @@ void MPU_Fusion_Read_Burst(void) {
     Drone_IMU.Gyro_X_RAW  = (int16_t)((buffer[8] << 8) | buffer[9]);
     Drone_IMU.Gyro_Y_RAW  = (int16_t)((buffer[10] << 8) | buffer[11]);
     Drone_IMU.Gyro_Z_RAW  = (int16_t)((buffer[12] << 8) | buffer[13]);
+    return 1; // Hút sạch sẽ thành công
 }
 
 // =================================================================
 // THÊM MỚI Ở STAGE 6: HÀM TÌM VÀ TRIỆT TIÊU SAI SỐ (CALIBRATION)
 // Lưu ý: Mạch phải ĐƯỢC ĐẶT NẰM IM PHẲNG trên bàn trước khi gọi hàm này
 // =================================================================
-void MPU_Fusion_Calibrate(void) {
+uint8_t MPU_Fusion_Calibrate(void) {
     int32_t sum_ax = 0, sum_ay = 0, sum_az = 0;
     int32_t sum_gx = 0, sum_gy = 0, sum_gz = 0;
     uint16_t num_samples = 1000; // Lấy 1000 mẫu để tính trung bình
     uint8_t buffer[14]; // SỬA LỖI STAGE 6: Dùng buffer ẩn để không làm nhiễu cửa sổ Watch
     for (uint16_t i = 0; i < num_samples; i++) {
-        // Hút 14 bytes thẳng vào mảng ẩn, KHÔNG qua Drone_IMU
-        MPU_Read_Multi(0x3B, buffer, 14);
+        // [FIX LỖI]: Phá vỡ Án tử 1000 Vòng lặp. Hễ đứt dây 1 nhịp là hủy bỏ ngay lập tức!
+        if (MPU_Read_Multi(0x3B, buffer, 14) == 0) return 0;
 
         
         sum_ax += (int16_t)((buffer[0] << 8) | buffer[1]);
@@ -98,6 +100,9 @@ void MPU_Fusion_Calibrate(void) {
     Drone_IMU.Gyro_X_Offset = sum_gx / num_samples;
     Drone_IMU.Gyro_Y_Offset = sum_gy / num_samples;
     Drone_IMU.Gyro_Z_Offset = sum_gz / num_samples;
+
+    Drone_IMU.last_time = micros();
+    return 1; // Báo cáo Calibrate thành công
 }
 
 // =================================================================
@@ -108,6 +113,7 @@ void MPU_Fusion_Compute(void) {
     // Accel chia 4096 (Cấu hình ±8g). Gyro chia 65.5 (Cấu hình ±500 dps)
     // --- SỬA LOGIC STAGE 6: Lấy Data Thô TRỪ ĐI Offset trước khi chia ---
     // Code cũ: Drone_IMU.Ax = (float)Drone_IMU.Accel_X_RAW / 4096.0f;
+    // 1. Trừ Offset và Scale (Giữ nguyên như cũ)
     Drone_IMU.Ax = (float)(Drone_IMU.Accel_X_RAW - Drone_IMU.Accel_X_Offset) / 4096.0f;
     Drone_IMU.Ay = (float)(Drone_IMU.Accel_Y_RAW - Drone_IMU.Accel_Y_Offset) / 4096.0f;
     Drone_IMU.Az = (float)(Drone_IMU.Accel_Z_RAW - Drone_IMU.Accel_Z_Offset) / 4096.0f;
@@ -118,14 +124,22 @@ void MPU_Fusion_Compute(void) {
     Drone_IMU.Gz = (float)(Drone_IMU.Gyro_Z_RAW - Drone_IMU.Gyro_Z_Offset) / 65.5f;
     // ---------------------------------------------------------------------
 
+    // 2. Tính Delta Time
+    uint16_t current_time = micros();
+    Drone_IMU.dt = (float)((uint16_t)(current_time - Drone_IMU.last_time)) / 1000000.0f; 
+    Drone_IMU.last_time = current_time;
+
     // Bước 2: Dùng Toán học giải tích (Trigonometry) tính góc Roll & Pitch từ Gia tốc
     // Hệ số 57.2957795f dùng để đổi từ đơn vị Radian sang Độ (180/PI)
-    Drone_IMU.Roll  = atan2(Drone_IMU.Ay, Drone_IMU.Az) * 57.2957795f;
+    float Accel_Roll  = atan2(Drone_IMU.Ay, Drone_IMU.Az) * 57.2957795f;
     
     // Dùng công thức Pythagoras cho trục Pitch để triệt tiêu nhiễu khi xoay ngược
-    Drone_IMU.Pitch = atan2(-Drone_IMU.Ax, sqrt(Drone_IMU.Ay * Drone_IMU.Ay + Drone_IMU.Az * Drone_IMU.Az)) * 57.2957795f;
+    float Accel_Pitch = atan2(-Drone_IMU.Ax, sqrt(Drone_IMU.Ay * Drone_IMU.Ay + Drone_IMU.Az * Drone_IMU.Az)) * 57.2957795f;
     
-    // (Góc Yaw rất phức tạp vì bị Drift (trôi), tạm thời anh em mình chưa tính ở bước này)
+    // 3. Tính góc Yaw
+    Drone_IMU.Roll  = 0.98f * (Drone_IMU.Roll  + Drone_IMU.Gx * Drone_IMU.dt) + 0.02f * Accel_Roll;
+    Drone_IMU.Pitch = 0.98f * (Drone_IMU.Pitch + Drone_IMU.Gy * Drone_IMU.dt) + 0.02f * Accel_Pitch;
+    Drone_IMU.Yaw   = Drone_IMU.Yaw + Drone_IMU.Gz * Drone_IMU.dt;
 }
 /*
 2. Giải mã "Ma Thuật Trắng" (Register Map)

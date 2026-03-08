@@ -400,6 +400,16 @@
               <FilePath>.\button.h</FilePath>
             </File>
             <File>
+              <FileName>hal_timer_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\hal_timer_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>hal_timer_pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\hal_timer_pwm.h</FilePath>
+            </File>
+            <File>
               <FileName>i2c_mpu_debug.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\i2c_mpu_debug.c</FilePath>
@@ -410,14 +420,14 @@
               <FilePath>.\i2c_mpu_debug.h</FilePath>
             </File>
             <File>
-              <FileName>xx_mpu_data_fusion.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\xx_mpu_data_fusion.h</FilePath>
-            </File>
-            <File>
               <FileName>xx_mpu_data_fusion.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\xx_mpu_data_fusion.c</FilePath>
+            </File>
+            <File>
+              <FileName>xx_mpu_data_fusion.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\xx_mpu_data_fusion.h</FilePath>
             </File>
           </Files>
         </Group>
