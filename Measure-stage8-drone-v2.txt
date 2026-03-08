@@ -1,0 +1,47 @@
+Đo lần 1:
+1. Cúi mũi mạch xuống đất
+M1(TL):  510 | M2(TR):  489 | M3(BR):  293 | M4(BL):  306
+2. Bốc đầu mạch lên trời
+M1(TL):  311 | M2(TR):  275 | M3(BR):  504 | M4(BL):  508
+3. Nghiêng mạch sang Trái
+M1(TL):  193 | M2(TR):  452 | M3(BR):  549 | M4(BL):  404
+4. Nghiêng mạch sang Phải
+M1(TL):  434 | M2(TR):  100 | M3(BR):  497 | M4(BL):  566
+
+Đo lần 2:
+1. Cúi mũi mạch xuống đất
+M1(TL):  518 | M2(TR):  499 | M3(BR):  264 | M4(BL):  317
+2. Bốc đầu mạch lên trời
+M1(TL):  122 | M2(TR):  476 | M3(BR):  301 | M4(BL):  699   
+3. Nghiêng mạch sang Trái
+M1(TL):  338 | M2(TR):  534 | M3(BR):  460 | M4(BL):  266
+4. Nghiêng mạch sang Phải
+M1(TL):  573 | M2(TR):  346 | M3(BR):  260 | M4(BL):  419
+
+Đo lần 3:
+1. Cúi mũi mạch xuống đất
+M1(TL):  585 | M2(TR):  421 | M3(BR):  356 | M4(BL):  236
+2. Bốc đầu mạch lên trời
+M1(TL):  243 | M2(TR):  352 | M3(BR):  437 | M4(BL):  565
+3. Nghiêng mạch sang Trái
+M1(TL):  277 | M2(TR):  468 | M3(BR):  536 | M4(BL):  317
+4. Nghiêng mạch sang Phải
+M1(TL):  681 | M2(TR):  371 | M3(BR):  235 | M4(BL):  312
+Đo lần 4:
+1. Cúi mũi mạch xuống đất
+M1(TL):  533 | M2(TR):  485 | M3(BR):  280 | M4(BL):  300
+2. Bốc đầu mạch lên trời
+M1(TL):  318 | M2(TR):  279 | M3(BR):  503 | M4(BL):  498
+3. Nghiêng mạch sang Trái
+M1(TL):  139 | M2(TR):  459 | M3(BR):  550 | M4(BL):  449s
+4. Nghiêng mạch sang Phải
+M1(TL):  705 | M2(TR):  501 | M3(BR):  118 | M4(BL):  273
+Đo lần 5:
+1. Cúi mũi mạch xuống đất
+M1(TL):  533 | M2(TR):  476 | M3(BR):  289 | M4(BL):  300
+2. Bốc đầu mạch lên trời
+M1(TL):  313 | M2(TR):  269 | M3(BR):  520 | M4(BL):  495
+3. Nghiêng mạch sang Trái
+M1(TL):  202 | M2(TR):  447 | M3(BR):  547 | M4(BL):  403
+4. Nghiêng mạch sang Phải
+M1(TL):  772 | M2(TR):  372 | M3(BR):  233 | M4(BL):  221

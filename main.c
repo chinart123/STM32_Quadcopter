@@ -117,8 +117,9 @@ int main(void) {
                     MPU_Fusion_Compute();
                     
                     // 2. CHẠY THUẬT TOÁN PID
-                    PID_Compute(Drone_IMU.Roll, Drone_IMU.Pitch, Drone_IMU.Yaw, Drone_IMU.dt);
-                    
+                    //PID_Compute(Drone_IMU.Roll, Drone_IMU.Pitch, Drone_IMU.Yaw, Drone_IMU.dt); // Code CŨ đang bị lệch trục:
+                    //PID_Compute(Drone_IMU.Pitch, Drone_IMU.Roll, Drone_IMU.Yaw, Drone_IMU.dt); // Code MỚI (Hack xoay mạch 90 độ bằng phần mềm):
+										PID_Compute(Drone_IMU.Pitch, -Drone_IMU.Roll, Drone_IMU.Yaw, Drone_IMU.dt); // Thêm dấu TRỪ (-) trước Drone_IMU.Roll, nghiêng lên xuống đúng, nghiêng trái phải sai.
                     // 3. ĐẨY XUỐNG BỘ TRỘN ĐỘNG CƠ 
                     // (Giả lập sếp đang đẩy cần ga mức 400 / 999)
                     Motor_Mixer(400); 
