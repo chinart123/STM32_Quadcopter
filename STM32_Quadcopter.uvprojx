@@ -400,24 +400,14 @@
               <FilePath>.\button.h</FilePath>
             </File>
             <File>
-              <FileName>i2c_mpu_debug.c</FileName>
+              <FileName>xx_mpu_complementary_filter.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\i2c_mpu_debug.c</FilePath>
+              <FilePath>.\xx_mpu_complementary_filter.c</FilePath>
             </File>
             <File>
-              <FileName>i2c_mpu_debug.h</FileName>
+              <FileName>xx_mpu_complementary_filter.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\i2c_mpu_debug.h</FilePath>
-            </File>
-            <File>
-              <FileName>xx_mpu_data_fusion.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\xx_mpu_data_fusion.h</FilePath>
-            </File>
-            <File>
-              <FileName>xx_mpu_data_fusion.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\xx_mpu_data_fusion.c</FilePath>
+              <FilePath>.\xx_mpu_complementary_filter.h</FilePath>
             </File>
           </Files>
         </Group>
