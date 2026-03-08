@@ -46,7 +46,10 @@ typedef struct {
     float Roll;            // Góc nghiêng trái/phải (Oanh tạc)
     float Pitch;           // Góc ngóc đầu/chúi mũi (Bốc đầu)
     float Yaw;             // Góc xoay quanh trục Z (Đảo đuôi)
-    
+
+    // --- THÊM MỚI Ở STAGE 7 ---
+    float dt;              
+    uint16_t last_time;
 } MPU_Motion_t;
 
 // =================================================================
@@ -57,9 +60,10 @@ extern MPU_Motion_t Drone_IMU;
 
 // Các hàm sẽ viết trong file .c
 void MPU_Fusion_Init(void);       // Ghi cấu hình (DLPF, Range) vào MPU6500
-void MPU_Fusion_Read_Burst(void); // Hút 14 bytes thô bằng 1 lệnh I2C
+// [FIX LỖI]: Bắt 2 hàm này phải báo cáo kết quả (uint8_t)
+uint8_t MPU_Fusion_Read_Burst(void);
 void MPU_Fusion_Compute(void);    // Chạy cối xay toán học (Complementary Filter)
 
 // --- THÊM MỚI Ở STAGE 6: Hàm tự động hiệu chuẩn lúc khởi động ---
-void MPU_Fusion_Calibrate(void);
+uint8_t MPU_Fusion_Calibrate(void);
 #endif
