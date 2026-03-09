@@ -429,6 +429,26 @@
               <FileType>5</FileType>
               <FilePath>.\xx_mpu_data_fusion.h</FilePath>
             </File>
+            <File>
+              <FileName>pid_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\pid_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\pid_control.h</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\telemetry.h</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\telemetry.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
