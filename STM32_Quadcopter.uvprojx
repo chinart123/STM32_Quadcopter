@@ -449,6 +449,36 @@
               <FileType>1</FileType>
               <FilePath>.\telemetry.c</FilePath>
             </File>
+            <File>
+              <FileName>drn_button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drn_button.c</FilePath>
+            </File>
+            <File>
+              <FileName>drn_button.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\drn_button.h</FilePath>
+            </File>
+            <File>
+              <FileName>drn_timer_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drn_timer_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>drn_timer_pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\drn_timer_pwm.h</FilePath>
+            </File>
+            <File>
+              <FileName>main_board_choose.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\main_board_choose.c</FilePath>
+            </File>
+            <File>
+              <FileName>main_board_choose.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\main_board_choose.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

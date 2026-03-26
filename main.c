@@ -1,118 +1,110 @@
-#include "stm32f10x.h"
-#include "button.h"
-#include "i2c_mpu_debug.h" 
-#include "xx_mpu_data_fusion.h" 
-#include "hal_timer_pwm.h" 
-#include "pid_control.h"  
-#include "telemetry.h"    // <--- NHÚNG MODULE GIAO TIẾP VÀO
-#include <string.h>
-#include <stdio.h> 
+#include "main_board_choose.h" 
 
-volatile unsigned int global_tick = 0; 
-volatile uint8_t xx = 0x00;           
-volatile uint8_t xx_mpu_state = 0x00; 
-volatile uint8_t xx_mpu_id = 0x00;
-uint32_t last_print_tick = 0;
+// =========================================================
+// ĐỊNH NGHĨA CÁC TRẠNG THÁI LOGIC CỦA HỆ THỐNG
+// =========================================================
+#define CMD_GATE_OPEN       0x01  // Mở cổng (Arm)
+#define CMD_GATE_CLOSE      0x04  // Đóng cổng (Disarm)
 
-void SysTick_Handler(void) { global_tick++; }
+// 3 Trạng thái ga mới
+#define CMD_RAMP_0_TO_50    0x02  // Tăng ga từ 0 lên 50%
+#define CMD_RAMP_50_TO_100  0x05  // Tăng ga từ 50 lên 100%
+#define CMD_RAMP_100_TO_0   0x03  // Giảm ga từ 100 về 0%
 
+// =========================================================
+// CÁC BIẾN TEST VÀ LƯU TRẠNG THÁI
+// =========================================================
+float xx_pwm_motor_1 = 0.0f; 
+float xx_pwm_step    = 5.0f; // Mỗi nhịp cộng/trừ 5% (Mất 1 giây để tăng 50%)
+
+// Trạng thái khởi động an toàn
+uint8_t xx_gate_state = CMD_GATE_CLOSE; 
+uint8_t xx_ramp_state = CMD_RAMP_100_TO_0; // Khởi đầu ở trạng thái giảm về 0 
+
+// Biến lưu trạng thái vật lý của nút (để bắt sườn - Edge Detection)
+uint8_t xx_last_pa1 = 0;
+uint8_t xx_last_pa0 = 0;
+// Thêm dòng này để dỗ dành file i2c_mpu_debug.c
+int xx_mpu_state = 0;
 int main(void) {
-    // 1. Khởi tạo GPIO Nút bấm
-    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
-    GPIOA->CRL &= ~(0xFF << 0);            
-    GPIOA->CRL |= (0x88 << 0);             
-    GPIOA->ODR |= (1UL << 0) | (1UL << 1); 
+    // Khởi tạo toàn bộ hệ thống phần cứng
+    main_board_choose_Init();
 
-    // 2. Khởi tạo Ngoại vi
-    I2C1_Init();
-    SysTick_Config(SystemCoreClock / 1000); 
-    HAL_TIM4_Micros_Init(); 
-    Telemetry_Init();       // <--- KHỞI TẠO UART1 LÀM NHIỆM VỤ TELEMETRY
-    
-    // 3. Khởi tạo Tay chân và Não bộ
-    HAL_TIM3_PWM_Init(); 
-    PID_Init();          
-    
-    printf("\n--- HET THONG FLIGHT CONTROLLER (STAGE 8) SAN SANG ---\n");
+    while(1) {
+        // ---------------------------------------------------------
+        // BƯỚC 1: QUÉT NÚT NHẤN VÀ CẬP NHẬT TRẠNG THÁI (FSM)
+        // ---------------------------------------------------------
+        
+        uint8_t current_pa1 = DRN_Button_Read_PA1(); 
+        uint8_t current_pa0 = DRN_Button_Read_PA0(); 
 
-    xx = 0x00;
-    xx_mpu_state = 0x00;
-    xx_mpu_id = 0x00;
-    MPU_Sleep(); 
-
-    while (1) {
-        button_state_hardware_scan();
-        button_fsm_process(&btn_PA0, global_tick);
-        button_fsm_process(&btn_PA1, global_tick);
-
-        if (btn_PA1.event_code == BTN_EVENT_SINGLE_CLICK) {
-            if (xx == 0x00 || xx == 0x04) {
-                printf("\nKhoi dong He thong...\n");
-                MPU_WakeUp();
-                MPU_Fusion_Init(); 
-                MPU_Read_WhoAmI(&xx_mpu_state, &xx_mpu_id); 
-                
-                printf("Dang Calibrate, vui long de im mach...\n");
-                if (MPU_Fusion_Calibrate() == 1) {
-                    xx = 0x01; 
-                    printf("Calibrate XONG! San sang bay (0x02)\n");
-                    
-                    Telemetry_Print_Header();           // In Header CSV
-                    Telemetry_Reset_Counters(global_tick); // Reset đếm I2C
-                } else {
-                    xx = 0x00; 
-                    printf("LOI: Day I2C bi long, khong the Calibrate!\n");
-                }
-            } 
-            else {
-                printf("\nDA TAT HE THONG (0x04)!\n");
-                MPU_Sleep();       
-                memset((void*)&Drone_IMU, 0, sizeof(MPU_Motion_t));
-                
-                HAL_TIM3_PWM_SetDuty(1, 0); HAL_TIM3_PWM_SetDuty(2, 0);
-                HAL_TIM3_PWM_SetDuty(3, 0); HAL_TIM3_PWM_SetDuty(4, 0);
-                xx = 0x04;         
+        // Xử lý PA1 (Công tắc Cổng: Đóng <-> Mở)
+        if (current_pa1 == 1 && xx_last_pa1 == 0) {
+            if (xx_gate_state == CMD_GATE_CLOSE) {
+                xx_gate_state = CMD_GATE_OPEN;  
+            } else {
+                xx_gate_state = CMD_GATE_CLOSE; 
             }
-            btn_PA1.event_code = BTN_EVENT_NONE; 
         }
+        xx_last_pa1 = current_pa1; 
 
-        if (btn_PA0.event_code == BTN_EVENT_SINGLE_CLICK) {
-            if (xx == 0x01 || xx == 0x03) {
-                xx = 0x02; 
-                printf("\n--- DONG CO DA MO GA (THROTTLE = 400) ---\n");
+        // Xử lý PA0 (Công tắc Ga: Vòng lặp 3 bước)
+        if (current_pa0 == 1 && xx_last_pa0 == 0) {
+            if (xx_ramp_state == CMD_RAMP_100_TO_0) {
+                xx_ramp_state = CMD_RAMP_0_TO_50;        // Nhịp 1: 0 -> 50
             } 
-            else if (xx == 0x02) {
-                xx = 0x03; 
-                HAL_TIM3_PWM_SetDuty(1, 0); HAL_TIM3_PWM_SetDuty(2, 0);
-                HAL_TIM3_PWM_SetDuty(3, 0); HAL_TIM3_PWM_SetDuty(4, 0);
+            else if (xx_ramp_state == CMD_RAMP_0_TO_50) {
+                xx_ramp_state = CMD_RAMP_50_TO_100;      // Nhịp 2: 50 -> 100
+            } 
+            else if (xx_ramp_state == CMD_RAMP_50_TO_100) {
+                xx_ramp_state = CMD_RAMP_100_TO_0;       // Nhịp 3: 100 -> 0
             }
-            btn_PA0.event_code = BTN_EVENT_NONE; 
+        }
+        xx_last_pa0 = current_pa0; 
+
+
+        // ---------------------------------------------------------
+        // BƯỚC 2: BƠM GA XUỐNG ĐỘNG CƠ DỰA TRÊN TRẠNG THÁI
+        // ---------------------------------------------------------
+        
+        if (xx_gate_state == CMD_GATE_CLOSE) { 
+            // KHÓA AN TOÀN: Ép ga về 0 lập tức nếu cổng đóng
+            xx_pwm_motor_1 = 0.0f;
+            DRN_Timer_PWM_SetDuty(1, 0.0f);
+        }
+        else if (xx_gate_state == CMD_GATE_OPEN) { 
+            
+            // LOGIC 1: Đẩy lên 50%
+            if (xx_ramp_state == CMD_RAMP_0_TO_50) {
+                xx_pwm_motor_1 += xx_pwm_step;
+                // Nếu lỡ đang ở 100% mà bấm nhầm sang chế độ này, nó sẽ giật thẳng về 50% (An toàn)
+                if (xx_pwm_motor_1 > 50.0f) {
+                    xx_pwm_motor_1 = 50.0f; 
+                }
+            }
+            // LOGIC 2: Đẩy lên 100%
+            else if (xx_ramp_state == CMD_RAMP_50_TO_100) {
+                xx_pwm_motor_1 += xx_pwm_step;
+                if (xx_pwm_motor_1 > 100.0f) {
+                    xx_pwm_motor_1 = 100.0f;
+                }
+            }
+            // LOGIC 3: Hạ cánh về 0%
+            else if (xx_ramp_state == CMD_RAMP_100_TO_0) {
+                xx_pwm_motor_1 -= xx_pwm_step;
+                if (xx_pwm_motor_1 < 0.0f) {
+                    xx_pwm_motor_1 = 0.0f;
+                }
+            }
+
+            // Xuất tín hiệu ra chân vật lý PA6
+            DRN_Timer_PWM_SetDuty(1, xx_pwm_motor_1);
         }
 
-        switch (xx) {
-            case 0x02:
-                if (MPU_Fusion_Read_Burst() == 1) {
-                    Telemetry_Update_I2C_Counter(14); // Báo cáo: Kéo thành công 14 bytes
-                    MPU_Fusion_Compute();
-                    
-                    PID_Compute(Drone_IMU.Pitch, -Drone_IMU.Roll, Drone_IMU.Yaw, Drone_IMU.dt); 
-                    Motor_Mixer(400); 
-                    
-                    // XỬ LÝ TELEMETRY GỌN NHẸ
-                    Telemetry_Calculate_Speed(global_tick); 
-                    Telemetry_Send_CSV(global_tick, &Drone_IMU, TIM3->CCR1, TIM3->CCR2, TIM3->CCR3, TIM3->CCR4);
-                }
-                break;
-                
-            case 0x03:
-                if (global_tick - last_print_tick >= 1000) {
-                    printf("DANG DUNG (0x03) - DONG CO TAT\n");
-                    last_print_tick = global_tick;
-                }
-                break;
-
-            default:
-                break;
-        }
+        // ---------------------------------------------------------
+        // Tốc độ quét 100ms
+        // Mất đúng 1 giây để leo từ 0->50%, và 1 giây nữa để lên 100%
+        // ---------------------------------------------------------
+        main_board_choose_Delay_ms(100); 
     }
 }
