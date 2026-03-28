@@ -20,7 +20,7 @@ void DRN_Timer_PWM_Init(void) {
     GPIOB->CRL |=  ((0xB << 0)  | (0xB << 4)); 
 
     // Tần số 4kHz (Clock 72MHz) và Thước đếm 1000 bước
-    TIM3->PSC = 143;     // Thay đổi bộ chia PSC từ 17 thành 143 để ép tần số về 500Hz, 72MHz / (143+1) = 500 
+    TIM3->PSC = 17;     // Thay đổi bộ chia PSC từ 17 thành 143 để ép tần số về 500Hz, 72MHz / (143+1) = 500 
     TIM3->ARR = 999;   
     TIM3->EGR |= TIM_EGR_UG;              
     TIM3->SR &= ~TIM_SR_UIF;
