@@ -1,0 +1,37 @@
+Tôi không biết do đây là cơ chế bảo vệ của STM32F1 hay gì mà tình trạng tôi gặp nó rất đặc biệt như sau.
+
+1. Lúc nãy tôi có nghe bạn nói có gì đó liên quan đến đây NRST. 
+Trước đây vi điều khiển của tôi có bị tình trạng phải dùng bootloader và phải nối dây NRST và chuyển jumper thì mới nạp và chạy chương trình được.
+Tôi không biết tình trạng bây giờ gặp phải có giống với hồi trước không?
+"
+Hành động của vi điều khiển: Khi bạn nạp code hoặc bấm Stop/Reset, mạch nạp ST-Link sẽ đè chân NRST của chip STM32 xuống mức thấp (Kích hoạt Reset toàn cục). CPU bị đóng băng.
+"
+Note: Từ đây xuống dưới là tôi vẫn cắm chân signal(PWM) nối từ chân Gate của mosfet vào PA6 nhé.
+
+2. Thế là tôi quyết định nối thêm dây NRST từ stlink vào chân R cuả STM32F1.
+Tình trạng vẫn giống như lúc nãy. Có nghĩa là ở trạng thái vừa flash code vào thì động cơ kêu lên. Còn bấm Run thì động cơ tắt.
+Chỉ là bây giờ khác hơn một xí. Sau khi bấm Run, tôi kích các trạng thái PWM ở chân PA6 lên 50% và 100%, khi nối chân dương của động cơ vào PA6 ở 2 mức này Tôi cảm thấy động cơ có sự chuyển động "lùng bùng" nhỏ nhỏ bên trong, nhưng hiển nhiên là không quay được động cơ.
+- Tình trạng chi tiết như sau:
+2.1 Trong giai đoạn ở 0x02: Từ 0 lên 50%, nó sẽ kêu liên tục, điện áp đo được ở PA6 ở 50% là 0.5V
+2.2 Trong giai đoạn ở 0x05: Từ 50% lên 100%, nó sẽ kêu liên tục cho tới khi đạt 100%, điện áp đo được ở PA6 ở 100% là 1V
+2.3 Trong giai đoạn ở 0x03: Từ 100% về 0, nó sẽ kêu liên tục cho tới khi chạm 0%, điện áp đo được ở PA6 từ 100% về 0%: là từ 1V về 0V
+Có một điều lưu ý như sau:
+- Nếu như tôi nối đất chung ở GND của dãy chân bên phải(dãy có chân PB12 và 5V ấy) với GND của dãy còn lại(dãy có PA6,PB7,PB0,PB1) ấy thì mức điện áp ở 100% sẽ bị sụt từ 3.25V xuống 3.05V.
+- Chân 3.3V thì tất nhiên không bị tác động nhé. Áp vẫn giữ nguyên. 
+- Mặc dù có sự sụt áp ở các chân PWM nhưng đây là cách duy nhất để nối đất chung với mass với bên còn lại. Làm cho việc 2 bên chân VCC của board STM32F1 hoạt động giống như nhau ở giai đoạn flash code.
+Tôi sẽ tổng hợp lại
+Note: Từ đây xuống dưới là tôi vẫn cắm chân signal(PWM) nối từ chân Gate của mosfet vào PA6 nhé.
+
+3. Sau đó, tôi test thử các chân VCC này sau khi đã bấm Run(F5). Điều kinh ngạc xảy ra là.
+3.1 Nếu như tôi 'dí' chân dương của động cơ vào VCC(3.3V hoặc 5V) thì động cơ quay được 1 lần, nếu tôi buông ra và dí vào lần thứ 2 thì nó không bao giờ quay nữa. 
+3.2 Sau đó, nếu tôi bấm Stop(chuẩn bị nhấm thêm Reset nhưng chưa kịp) để vào trạng thái chờ giống như tình huống ban nãy. Thì ngay lập tức có lỗi hiện lên từ KeilC ngay lập tức.
+"
+Debugger Cortex M Error
+Cannot access target
+Shutting dơwn debug session
+"
+Và tất nhiên là tôi bị out chế độ debug, tôi cảm giác như đây là một cơ chế bảo vệ gì đấy. Tôi chỉ có thể "dí" chân dương động cơ vào đấy 1 lần. Không có được làm nhiều lần giống như lúc mới flash code.
+3.3 Tôi làm lại nhiều lần và kết quả là nó tương tự như vậy.
+Note: Từ đây xuống dưới là tôi vẫn cắm chân signal(PWM) nối từ chân Gate của mosfet vào PA6 nhé.
+
+4. Từ đầu đến giờ tôi vẫn cắm dây NRST ở ý 1. nhé.
