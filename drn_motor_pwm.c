@@ -56,8 +56,12 @@ void DRN_Motor_Update_Logic(DRN_ButtonEvent_t arm_event, DRN_ButtonEvent_t mode_
     }
 
     if (mode_event == BTN_EVENT_SINGLE_CLICK) {
-        if (xx_ramp_state == CMD_RAMP_100_TO_0) xx_ramp_state = CMD_RAMP_0_TO_50;        
-        else if (xx_ramp_state == CMD_RAMP_0_TO_50) xx_ramp_state = CMD_RAMP_50_TO_100;      
+        // Cập nhật chu trình tăng ga: 0 -> 20 -> 50 -> 70 -> 90 -> 100 -> 0
+        if (xx_ramp_state == CMD_RAMP_100_TO_0) xx_ramp_state = CMD_RAMP_TO_20;        
+        else if (xx_ramp_state == CMD_RAMP_TO_20) xx_ramp_state = CMD_RAMP_0_TO_50;      
+        else if (xx_ramp_state == CMD_RAMP_0_TO_50) xx_ramp_state = CMD_RAMP_TO_70;       
+        else if (xx_ramp_state == CMD_RAMP_TO_70) xx_ramp_state = CMD_RAMP_TO_90;
+        else if (xx_ramp_state == CMD_RAMP_TO_90) xx_ramp_state = CMD_RAMP_50_TO_100;
         else if (xx_ramp_state == CMD_RAMP_50_TO_100) xx_ramp_state = CMD_RAMP_100_TO_0;       
     }
 }
@@ -68,7 +72,7 @@ static void set_duty_channel_1(float percent) {
     
 #ifdef STM32F103C8T6
     uint16_t ccr_value = (uint16_t)((percent / 100.0f) * 999.0f);
-    TIM3->CCR2 = ccr_value;
+    TIM3->CCR2 = ccr_value; // PA7 (TIM3_CH2)
 #elif defined(ESP32_S3_SUPERMINI)
     // Code ESP32 đẩy duty...
 #endif
@@ -83,14 +87,27 @@ void DRN_Motor_Run_Task(uint32_t current_time) {
             set_duty_channel_1(0.0f);
         }
         else if (xx_gate_state == CMD_GATE_OPEN) { 
-            if (xx_ramp_state == CMD_RAMP_0_TO_50) {
+            // THÊM: Mốc 20%
+            if (xx_ramp_state == CMD_RAMP_TO_20) {
+                xx_pwm_motor_1 += xx_pwm_step;
+                if (xx_pwm_motor_1 > 20.0f) xx_pwm_motor_1 = 20.0f; 
+            }
+            // CŨ: Mốc 50%
+            else if (xx_ramp_state == CMD_RAMP_0_TO_50) {
                 xx_pwm_motor_1 += xx_pwm_step;
                 if (xx_pwm_motor_1 > 50.0f) xx_pwm_motor_1 = 50.0f; 
             }
-            else if (xx_ramp_state == CMD_RAMP_50_TO_100) {
+            // THÊM: Mốc 70%
+            else if (xx_ramp_state == CMD_RAMP_TO_70) {
                 xx_pwm_motor_1 += xx_pwm_step;
-                if (xx_pwm_motor_1 > 100.0f) xx_pwm_motor_1 = 100.0f;
+                if (xx_pwm_motor_1 > 70.0f) xx_pwm_motor_1 = 70.0f;
             }
+            // THÊM: Mốc 90%
+            else if (xx_ramp_state == CMD_RAMP_TO_90) {
+                xx_pwm_motor_1 += xx_pwm_step;
+                if (xx_pwm_motor_1 > 90.0f) xx_pwm_motor_1 = 90.0f;
+            }
+            // CŨ: Mốc về 0%
             else if (xx_ramp_state == CMD_RAMP_100_TO_0) {
                 xx_pwm_motor_1 -= xx_pwm_step;
                 if (xx_pwm_motor_1 < 0.0f) xx_pwm_motor_1 = 0.0f;
