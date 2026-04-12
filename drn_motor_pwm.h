@@ -14,6 +14,11 @@
 #define CMD_RAMP_50_TO_100  0x05  // Tăng ga từ 50 lên 100%
 #define CMD_RAMP_100_TO_0   0x03  // Giảm ga từ 100 về 0%
 
+// THÊM MỚI: Các mốc 20%, 70%, 90%
+#define CMD_RAMP_TO_20      0x06  // Tăng ga lên 20%
+#define CMD_RAMP_TO_70      0x07  // Tăng ga lên 70%
+#define CMD_RAMP_TO_90      0x08  // Tăng ga lên 90%
+
 // =========================================================
 // PHƠI BÀY CÁC BIẾN TEST ĐỂ XEM TRONG WATCH WINDOW
 // =========================================================
