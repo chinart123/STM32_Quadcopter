@@ -34,3 +34,7 @@ RTE/
 # ==========================================
 .vscode/
 .codemap/
+.gitnexus
+.claude/
+AGENTS.md 
+CLAUDE.md
