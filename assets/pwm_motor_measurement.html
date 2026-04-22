@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng Gợn dòng Động cơ 8520</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #121212; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 800px; }
+        h2 { color: #4fc3f7; text-align: center; margin-top: 0; }
+        .controls { display: flex; gap: 20px; margin-bottom: 20px; background: #2c2c2c; padding: 15px; border-radius: 8px; }
+        .control-group { flex: 1; }
+        label { font-weight: bold; color: #b3e5fc; display: block; margin-bottom: 8px; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        canvas { background: #000; border: 2px solid #333; border-radius: 8px; width: 100%; height: 300px; display: block; }
+        .status-bar { margin-top: 20px; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2em; transition: 0.3s; }
+        .danger { background: #d32f2f; color: white; }
+        .warning { background: #fbc02d; color: black; }
+        .safe { background: #388e3c; color: white; }
+        .grid-val { display: flex; justify-content: space-between; font-size: 0.9em; color: #888; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Mô phỏng Gợn dòng Động cơ (Current Ripple)</h2>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>Tần số PWM: <span id="freq-val" style="color: #fff;">4000 Hz</span></label>
+            <input type="range" id="freq-slider" min="0" max="2" step="1" value="1">
+            <div class="grid-val"><span>500Hz</span><span>4kHz</span><span>16kHz</span></div>
+        </div>
+        <div class="control-group">
+            <label>Duty Cycle: <span id="duty-val" style="color: #fff;">70%</span></label>
+            <input type="range" id="duty-slider" min="20" max="90" step="1" value="70">
+            <div class="grid-val"><span>20%</span><span>90%</span></div>
+        </div>
+    </div>
+
+    <canvas id="scope" width="800" height="300"></canvas>
+    
+    <div id="status" class="status-bar warning">
+        Trạng thái Motor: ẤM NHẸ (Gợn dòng trung bình)
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('scope');
+    const ctx = canvas.getContext('2d');
+    const freqSlider = document.getElementById('freq-slider');
+    const dutySlider = document.getElementById('duty-slider');
+    const freqVals = [500, 4000, 16000];
+    
+    let time = 0;
+
+    function drawScope() {
+        const freqIdx = parseInt(freqSlider.value);
+        const freq = freqVals[freqIdx];
+        const duty = parseInt(dutySlider.value) / 100;
+        
+        document.getElementById('freq-val').innerText = freq + " Hz";
+        document.getElementById('duty-val').innerText = (duty * 100) + "%";
+
+        // Logic trạng thái
+        const statusEl = document.getElementById('status');
+        if(freq === 500) {
+            statusEl.className = "status-bar danger";
+            statusEl.innerText = "Trạng thái Motor: NÓNG RỰC (Gợn dòng phá hủy chổi than!)";
+        } else if(freq === 4000) {
+            statusEl.className = "status-bar warning";
+            statusEl.innerText = "Trạng thái Motor: ẤM NHẸ (Gợn dòng trung bình)";
+        } else {
+            statusEl.className = "status-bar safe";
+            statusEl.innerText = "Trạng thái Motor: MÁT & IM LẶNG (Đường dòng điện phẳng phẳng DC)";
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Vẽ lưới (Grid)
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1;
+        for(let i=0; i<canvas.width; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+        for(let i=0; i<canvas.height; i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
+
+        // Vẽ đường trung tâm (0A)
+        ctx.strokeStyle = '#555';
+        ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(canvas.width, 250); ctx.stroke();
+
+        // Vẽ sóng
+        ctx.strokeStyle = '#00e676'; // Màu tia xanh lá
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        const baseCurrent = duty * 2.0; // Max ~2A
+        // Biên độ gợn dòng tỷ lệ nghịch với tần số
+        const rippleAmps = (1 / freq) * 800; // Hệ số ảo để đồ thị đẹp
+        
+        // Tính chu kỳ pixel trên màn hình
+        const periodPixels = (16000 / freq) * 10; 
+        
+        for(let x = 0; x < canvas.width; x++) {
+            const cyclePos = ((x + time) % periodPixels) / periodPixels;
+            let current = 0;
+            
+            if(cyclePos < duty) {
+                // Tụ nạp (dòng điện tăng)
+                current = baseCurrent - (rippleAmps/2) + (rippleAmps * (cyclePos/duty));
+            } else {
+                // Tụ xả (dòng điện giảm)
+                current = baseCurrent + (rippleAmps/2) - (rippleAmps * ((cyclePos-duty)/(1-duty)));
+            }
+            
+            // Ở 16kHz làm phẳng hoàn toàn
+            if(freq === 16000) current = baseCurrent;
+
+            // Chuyển đổi dòng điện (A) sang tọa độ Y
+            const y = 250 - (current * 80); 
+            
+            if(x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        
+        time += 2; // Tốc độ cuộn đồ thị
+        requestAnimationFrame(drawScope);
+    }
+
+    drawScope();
+</script>
+</body>
+</html>
