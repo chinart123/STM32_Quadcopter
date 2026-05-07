@@ -1,9 +1,10 @@
 # ==========================================
 # 1. BỎ QUA RÁC BIÊN DỊCH CỦA KEILC (MDK-ARM)
 # ==========================================
-STM32_BareMetal_Test/Objects/
-STM32_BareMetal_Test/Listings/
-STM32_BareMetal_Test/DebugConfig/
+# FIX: Bỏ prefix "STM32_BareMetal_Test/" — .gitignore đã ở root rồi
+Objects/
+Listings/
+DebugConfig/
 *.o
 *.d
 *.crf
@@ -15,26 +16,45 @@ STM32_BareMetal_Test/DebugConfig/
 *.dep
 *.build_log.htm
 *.iex
+*.lst
 
 # ==========================================
 # 2. BỎ QUA FILE CẤU HÌNH CÁ NHÂN & DEBUG
 # ==========================================
 *.uvguix.*
-*.uvoptx
+# FIX: KHÔNG ignore *.uvoptx — chứa debug config cần thiết
+# *.uvoptx   ← bỏ dòng này ra
 *.scvd
 JLinkLog.txt
-# Bỏ qua các file backup của thư viện RTE do KeilC sinh ra
+*.bak
 *.base@*
-# Bỏ qua thư mục "RTE\_Target_1\RTE_Components.h"
-# Run time environment
-# Khi nào đổi chip(e.g: STM32F4 thì mới cần giữ lại)
-RTE/    
+
+# FIX: KHÔNG ignore toàn bộ RTE/ — chứa startup files cần build
+# RTE/   ← nguy hiểm, bỏ dòng này ra
+# Chỉ ignore file backup do Keil sinh ra:
+RTE/**/*.base@*
+
 # ==========================================
 # 3. BỎ QUA CẤU HÌNH CỦA EDITOR KHÁC
 # ==========================================
-.vscode/
+# FIX: Không ignore toàn bộ .vscode/ — giữ lại settings cần thiết
+# .vscode/   ← bỏ dòng này ra
+.vscode/ipch/
+.vscode/*.log
+
+# KHÔNG ignore: .vscode/c_cpp_properties.json (IntelliSense include paths)
+#               .vscode/launch.json (ST-Link debug config)
+#               .vscode/settings.json
+
 .codemap/
 .gitnexus
 .claude/
-AGENTS.md 
+AGENTS.md
 CLAUDE.md
+
+# ==========================================
+# 4. OS ARTIFACTS
+# ==========================================
+Thumbs.db
+.DS_Store
+desktop.ini
