@@ -1,5 +1,5 @@
 #include "drn_timer_pwm.h"
-#include "main_board_choose.h" 
+#include "drn_main_board_choose.h"
 
 #ifdef STM32F103C8T6
     #include "stm32f10x.h"

@@ -1,8 +1,8 @@
 #include "xx_mpu_complementary_filter.h"
 #include <math.h>
-
+#include "drn_time.h"
 DMPU_Motion_t_complementary_filter Filter_IMU;
-extern volatile unsigned int global_tick; // Lấy đồng hồ mili-giây từ main.c sang
+// [ĐÃ SỬA]: Xóa biến global_tick cũ vì giờ đã có DRN_Millis()
 
 // =====================================================================
 // KHỐI 1: PHẦN CỨNG ĐỘC LẬP (I2C, TIMER 4, UART 1)
@@ -28,13 +28,13 @@ void Filter_Machine_UART_Init(void) {
     USART1->BRR = 0x271;
     USART1->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
 }
-
-// Ghi đè hàm fputc để hàm printf có thể đẩy chữ ra chân PA9
-int fputc(int ch, FILE *f) {
-    while (!(USART1->SR & USART_SR_TXE));
-    USART1->DR = (ch & 0xFF);
-    return ch;
-}
+/* Lỗi sập Build: Symbol fputc multiply defined*/
+//// Ghi đè hàm fputc để hàm printf có thể đẩy chữ ra chân PA9
+//int fputc(int ch, FILE *f) {
+//    while (!(USART1->SR & USART_SR_TXE));
+//    USART1->DR = (ch & 0xFF);
+//    return ch;
+//}
 
 static void Core_I2C1_Recovery(void) {
     RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
@@ -59,7 +59,8 @@ static void Core_I2C1_Init(void) {
     I2C1->CR1 |= I2C_CR1_PE | I2C_CR1_ACK; 
 }
 
-static uint8_t Core_I2C_Read(uint8_t reg, uint8_t *data, uint8_t size) {
+// [ĐÃ SỬA]: Bỏ chữ "static" để file xx_mpu_data_fusion.c có thể mượn hàm I2C này
+uint8_t Core_I2C_Read(uint8_t reg, uint8_t *data, uint8_t size) {
     uint32_t t;
     t = 500000; while(I2C1->SR2 & I2C_SR2_BUSY) { if(--t==0) goto err; }
     I2C1->CR1 |= I2C_CR1_START;
@@ -86,9 +87,10 @@ err:
     return 0; 
 }
 
-static void Core_I2C_Write(uint8_t reg, uint8_t data) {
+// [ĐÃ SỬA]: Bỏ chữ "static"
+void Core_I2C_Write(uint8_t reg, uint8_t data) {
     I2C1->CR1 |= I2C_CR1_START; while(!(I2C1->SR1 & I2C_SR1_SB));
-    I2C1->DR = 0xD0; while(!(I2C1->SR1 & I2C_SR1_ADDR)); (void)I2C1->SR1; (void)I2C1->SR2;
+    I2C1->DR = 0xD0; while(!(I2C1->SR1 & I2C_SR1_ADDR)){}; (void)I2C1->SR1; (void)I2C1->SR2;
     I2C1->DR = reg;  while(!(I2C1->SR1 & I2C_SR1_TXE));
     I2C1->DR = data; while(!(I2C1->SR1 & I2C_SR1_BTF));
     I2C1->CR1 |= I2C_CR1_STOP;
@@ -135,10 +137,11 @@ uint8_t Filter_Machine_Run(void) {
     
     byte_counter += 14; // Hút thành công thì được cộng thêm 14 bytes
     
-    if (global_tick - last_sec_tick >= 1000) { // Đã trôi qua 1000ms (1 giây)
+    // [ĐÃ SỬA]: Thay global_tick bằng DRN_Millis()
+    if (DRN_Millis() - last_sec_tick >= 1000) { // Đã trôi qua 1000ms (1 giây)
         Filter_IMU.Bytes_Per_Second = byte_counter; // Chốt sổ báo cáo cho sếp
         byte_counter = 0;                           // Reset để đếm lại giây mới
-        last_sec_tick = global_tick;
+        last_sec_tick = DRN_Millis();
     }
     
     // 3. Gán và Xử lý Toán học (Đã khôi phục biến Offset cho sếp)

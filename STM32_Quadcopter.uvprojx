@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\include;.\Old_Core_Files</IncludePath>
+              <IncludePath>.\include;.\Drivers\STM32F1xx_HAL_Driver\Inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -383,21 +383,34 @@
       <Groups>
         <Group>
           <GroupName>Source Group 1</GroupName>
+        </Group>
+        <Group>
+          <GroupName>src</GroupName>
           <Files>
             <File>
-              <FileName>main.c</FileName>
+              <FileName>drn_button.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\main.c</FilePath>
+              <FilePath>.\src\drn_button.c</FilePath>
             </File>
             <File>
-              <FileName>button.c</FileName>
+              <FileName>drn_main_board_choose.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Old_Core_Files\button.c</FilePath>
+              <FilePath>.\src\drn_main_board_choose.c</FilePath>
             </File>
             <File>
-              <FileName>button.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Old_Core_Files\button.h</FilePath>
+              <FileName>drn_motor_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drn_motor_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>drn_time.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drn_time.c</FilePath>
+            </File>
+            <File>
+              <FileName>drn_timer_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drn_timer_pwm.c</FilePath>
             </File>
             <File>
               <FileName>hal_timer_pwm.c</FileName>
@@ -405,34 +418,64 @@
               <FilePath>.\src\hal_timer_pwm.c</FilePath>
             </File>
             <File>
-              <FileName>hal_timer_pwm.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\include\hal_timer_pwm.h</FilePath>
-            </File>
-            <File>
-              <FileName>i2c_mpu_debug.c</FileName>
+              <FileName>main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Old_Core_Files\i2c_mpu_debug.c</FilePath>
+              <FilePath>.\src\main.c</FilePath>
             </File>
             <File>
-              <FileName>i2c_mpu_debug.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Old_Core_Files\i2c_mpu_debug.h</FilePath>
+              <FileName>pid_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\pid_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry.c</FilePath>
+            </File>
+            <File>
+              <FileName>xx_mpu_complementary_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\xx_mpu_complementary_filter.c</FilePath>
             </File>
             <File>
               <FileName>xx_mpu_data_fusion.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\xx_mpu_data_fusion.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>include</GroupName>
+          <Files>
             <File>
-              <FileName>xx_mpu_data_fusion.h</FileName>
+              <FileName>drn_button.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\include\xx_mpu_data_fusion.h</FilePath>
+              <FilePath>.\include\drn_button.h</FilePath>
             </File>
             <File>
-              <FileName>pid_control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\pid_control.c</FilePath>
+              <FileName>drn_main_board_choose.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\include\drn_main_board_choose.h</FilePath>
+            </File>
+            <File>
+              <FileName>drn_motor_pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\include\drn_motor_pwm.h</FilePath>
+            </File>
+            <File>
+              <FileName>drn_time.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\include\drn_time.h</FilePath>
+            </File>
+            <File>
+              <FileName>drn_timer_pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\include\drn_timer_pwm.h</FilePath>
+            </File>
+            <File>
+              <FileName>hal_timer_pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\include\hal_timer_pwm.h</FilePath>
             </File>
             <File>
               <FileName>pid_control.h</FileName>
@@ -445,69 +488,14 @@
               <FilePath>.\include\telemetry.h</FilePath>
             </File>
             <File>
-              <FileName>telemetry.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\telemetry.c</FilePath>
-            </File>
-            <File>
-              <FileName>drn_button.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\drn_button.c</FilePath>
-            </File>
-            <File>
-              <FileName>drn_button.h</FileName>
+              <FileName>xx_mpu_complementary_filter.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\include\drn_button.h</FilePath>
+              <FilePath>.\include\xx_mpu_complementary_filter.h</FilePath>
             </File>
             <File>
-              <FileName>drn_timer_pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\drn_timer_pwm.c</FilePath>
-            </File>
-            <File>
-              <FileName>drn_timer_pwm.h</FileName>
+              <FileName>xx_mpu_data_fusion.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\include\drn_timer_pwm.h</FilePath>
-            </File>
-            <File>
-              <FileName>main_board_choose.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Old_Core_Files\main_board_choose.c</FilePath>
-            </File>
-            <File>
-              <FileName>main_board_choose.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Old_Core_Files\main_board_choose.h</FilePath>
-            </File>
-            <File>
-              <FileName>drn_time.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\include\drn_time.h</FilePath>
-            </File>
-            <File>
-              <FileName>drn_time.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\drn_time.c</FilePath>
-            </File>
-            <File>
-              <FileName>drn_motor_pwm.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\include\drn_motor_pwm.h</FilePath>
-            </File>
-            <File>
-              <FileName>drn_motor_pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\drn_motor_pwm.c</FilePath>
-            </File>
-            <File>
-              <FileName>drn_main_board_choose.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\include\drn_main_board_choose.h</FilePath>
-            </File>
-            <File>
-              <FileName>drn_main_board_choose.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\drn_main_board_choose.c</FilePath>
+              <FilePath>.\include\xx_mpu_data_fusion.h</FilePath>
             </File>
           </Files>
         </Group>

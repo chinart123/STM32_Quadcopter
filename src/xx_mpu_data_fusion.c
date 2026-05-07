@@ -1,16 +1,23 @@
 #include "xx_mpu_data_fusion.h"
-#include "i2c_mpu_debug.h" // Gọi tài xế I2C vào làm việc
+#include "drn_main_board_choose.h" //#include "i2c_mpu_debug.h" // Gọi tài xế I2C vào làm việc
 #include <math.h> // Thư viện toán học cực mạnh để tính Lượng giác
 #include "hal_timer_pwm.h" // Dùng cho stage 7
 // Khởi tạo biến toàn cục đã khai báo ở file .h
 MPU_Motion_t Drone_IMU;
 
-// (Nhắc nhẹ: Sếp nhớ đảm bảo hàm MPU_WriteReg đã được khai báo trong i2c_mpu_debug.h nhé, 
-// nếu chưa có thì sếp copy dòng này ném vào file .h đó: uint8_t MPU_WriteReg(uint8_t reg, uint8_t data); )
-extern uint8_t MPU_WriteReg(uint8_t reg, uint8_t data);
+// [ĐÃ SỬA]: Trỏ link trực tiếp sang driver I2C của file xx_mpu_complementary_filter.c
+extern void Core_I2C_Write(uint8_t reg, uint8_t data);
+extern uint8_t Core_I2C_Read(uint8_t reg, uint8_t *data, uint8_t size);
 
-// Cần gọi tài xế I2C từ file kia sang
-extern uint8_t MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size);
+// Bọc lại thành vỏ bọc cũ để KHÔNG PHẢI SỬA CÁC DÒNG CODE BÊN DƯỚI
+uint8_t MPU_WriteReg(uint8_t reg, uint8_t data) {
+    Core_I2C_Write(reg, data);
+    return 1;
+}
+
+uint8_t MPU_Read_Multi(uint8_t reg, uint8_t *data, uint8_t size) {
+    return Core_I2C_Read(reg, data, size);
+}
 
 // =================================================================
 // HÀM CẤU HÌNH MPU-6500 CHUYÊN DỤNG CHO QUADCOPTER
@@ -101,7 +108,8 @@ uint8_t MPU_Fusion_Calibrate(void) {
     Drone_IMU.Gyro_Y_Offset = sum_gy / num_samples;
     Drone_IMU.Gyro_Z_Offset = sum_gz / num_samples;
 
-    Drone_IMU.last_time = micros();
+    // [ĐÃ SỬA]: Thay micros() nguy cơ tràn số bằng DRN_Millis()
+    Drone_IMU.last_time = DRN_Millis();
     return 1; // Báo cáo Calibrate thành công
 }
 
@@ -125,8 +133,9 @@ void MPU_Fusion_Compute(void) {
     // ---------------------------------------------------------------------
 
     // 2. Tính Delta Time
-    uint16_t current_time = micros();
-    Drone_IMU.dt = (float)((uint16_t)(current_time - Drone_IMU.last_time)) / 1000000.0f; 
+    // [ĐÃ SỬA]: Lấy trực tiếp thời gian bằng Mili-giây, và đổi /1000000.0f thành /1000.0f
+    uint32_t current_time = DRN_Millis();
+    Drone_IMU.dt = (float)(current_time - Drone_IMU.last_time) / 1000.0f; 
     Drone_IMU.last_time = current_time;
 
     // Bước 2: Dùng Toán học giải tích (Trigonometry) tính góc Roll & Pitch từ Gia tốc
@@ -158,7 +167,7 @@ Nâng lên ±8g là máy bay rớt cái ạch vẫn đo được thông số.
 C
 // ... trong vòng lặp switch(xx) ...
 case 0x01: // BẤM PA1 - KHỞI ĐỘNG HỆ THỐNG
-    MPU_Fusion_Init(); // Gọi hàm cấu hình cực xịn vừa viết
+    DRN_MPU6050_Init(); // Gọi hàm cấu hình cực xịn vừa viết
     MPU_Read_WhoAmI(&xx_mpu_state, &xx_mpu_id); // Đọc ID xem còn sống không
     
     // Nếu sếp thích hiển thị trực quan, có thể chớp tắt LED xanh 1 cái ở đây để báo Init xong
